@@ -1,6 +1,7 @@
 #ifndef _FACE_
 #define _FACE_
 
+#include <common.h>
 #include <vertex.h>
 #include <edge.h>
 #include <half_edge.h>

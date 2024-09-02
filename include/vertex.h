@@ -1,6 +1,7 @@
 #ifndef _VERTEX_
 #define _VERTEX_
 
+#include <common.h>
 #include <edge.h>
 #include <half_edge.h>
 #include <face.h>
