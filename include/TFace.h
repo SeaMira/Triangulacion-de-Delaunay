@@ -17,6 +17,8 @@ class Face {
         unsigned int handle();
 
         bool is_valid();
+        bool is_deleted();
+        void markDeleted();
 
         void set_one_half_edge(HalfEdge *half_edge);
         HalfEdge *get_one_half_edge();
@@ -34,6 +36,7 @@ class Face {
         Vertex *v1, *v2, *v3;
         unsigned int face_handle;
         HalfEdge *one_half_edge = nullptr;
+        bool deleted;
 };
 
 #endif // _FACE_

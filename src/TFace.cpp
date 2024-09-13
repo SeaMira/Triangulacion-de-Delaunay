@@ -61,3 +61,11 @@ std::tuple<double, double, double> Face::get_normal() {
     double z = 0.0;
     return std::make_tuple(x, y, z);
 }
+
+bool Face::is_deleted() {
+    return deleted;
+}
+
+void Face::markDeleted() {
+    deleted = true;
+}
