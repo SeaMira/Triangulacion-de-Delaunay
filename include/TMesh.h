@@ -14,6 +14,7 @@ class Mesh {
         Face* addFace(Vertex*v1, Vertex*v2, Vertex*v3);
         HalfEdge* addHalfEdge(Vertex*v1, Vertex*v2);
         void addingVertexInT(Vertex& new_v, Face* current_face);
+        void splitEdgeWithVertex(Vertex& new_v, HalfEdge* original_he);
 
         HalfEdge* next(HalfEdge* current);
 

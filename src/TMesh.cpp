@@ -346,6 +346,307 @@ void Mesh::addingVertexInT(Vertex& new_v, Face* current_face) {
 }
 
 
+void Mesh::splitEdgeWithVertex(Vertex& new_v, HalfEdge* original_he) {
+
+    // Obtener los vértices del segmento original
+    Vertex* v1 = original_he->get_vertex_one();
+    Vertex* v2 = original_he->get_vertex_two();
+    
+    // Obtener el half-edge opuesto
+    HalfEdge* opposing_he = &all_half_edges[original_he->get_opposing_half_edge()];
+
+    if (original_he->is_boundary() && original_he->get_parent_face() == std::numeric_limits<unsigned int>::max()) {
+        Face* face2 = &all_faces[opposing_he->get_parent_face()];
+        
+        // Step 1: Crear el nuevo vértice
+        new_v.set_handle(all_vertices.size());
+        all_vertices.push_back(new_v);
+        
+        // Step 2: Crear los nuevos half-edges
+        // Original half-edge (v1 -> v2) será dividido en dos
+        HalfEdge* he1 = addHalfEdge(v1, &new_v);
+        HalfEdge* he1t = addHalfEdge(&new_v, v1);
+        HalfEdge* he2 = addHalfEdge(&new_v, v2);
+        HalfEdge* he2t = addHalfEdge(v2, &new_v);
+
+        he1->set_boundary(true);
+        he1t->set_boundary(true);
+        he2->set_boundary(true);
+        he2t->set_boundary(true);
+
+        HalfEdge* s3 = &all_half_edges[opposing_he->next_handle()];
+        HalfEdge* s4 = &all_half_edges[s3->next_handle()];
+
+        // Step 3: Crear los half-edges internos para las nuevas caras
+        HalfEdge* he4 = addHalfEdge(s3->get_vertex_two(), &new_v);
+        HalfEdge* he4t = addHalfEdge(&new_v, s3->get_vertex_two());
+        
+
+        // Step 4: Crear las nuevas caras (4 en total)
+        Face* new_face3 = addFace(&new_v, s3->get_vertex_one(), s3->get_vertex_two());  // Tercera cara (nueva)
+        Face* new_face4 = addFace(&new_v, s4->get_vertex_one(), s4->get_vertex_two());  // Cuarta cara (nueva)
+
+
+        // Step 5: Asignar los half-edges a las nuevas caras
+        new_face3->set_one_half_edge(s3);
+        new_face4->set_one_half_edge(s4);
+
+        he1t->set_parent_face(new_face3->handle());
+        s3->set_parent_face(new_face3->handle());
+        he4->set_parent_face(new_face3->handle());
+
+        he4t->set_parent_face(new_face4->handle());
+        s4->set_parent_face(new_face4->handle());
+        he2t->set_parent_face(new_face4->handle());
+
+        he1->set_parent_face(std::numeric_limits<unsigned int>::max());
+        he2->set_parent_face(std::numeric_limits<unsigned int>::max());
+
+        // Step 6: Conectar half-edges
+        // Para cada nuevo triángulo, conectar el half-edge entrante y el saliente
+        he1->set_opposing_half_edge(he1t->handle());
+        he1t->set_opposing_half_edge(he1->handle());
+        
+        he2->set_opposing_half_edge(he2t->handle());
+        he2t->set_opposing_half_edge(he2->handle());
+
+        he4->set_opposing_half_edge(he4t->handle());
+        he4t->set_opposing_half_edge(he4->handle());
+
+        // Step 7: Actualizar conectividad (nuevos half-edges y caras)
+        // Conectar half-edges entre las nuevas caras
+        he1t->set_next_handle(s3->handle());
+        s3->set_next_handle(he4->handle());
+        he4->set_next_handle(he1t->handle());
+
+        he4t->set_next_handle(s4->handle());
+        s4->set_next_handle(he2t->handle());
+        he2t->set_next_handle(he4t->handle());
+
+        he1->set_next_handle(std::numeric_limits<unsigned int>::max());
+        he2->set_next_handle(std::numeric_limits<unsigned int>::max());
+
+        // Step 8: Actualizar vértices
+        v1->add_outgoing_half_edge(he1->handle());
+        v1->add_incoming_half_edge(he1t->handle());
+
+        v2->add_incoming_half_edge(he2->handle());
+        v2->add_outgoing_half_edge(he2t->handle());
+
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he1->handle());
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he1t->handle());
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he2->handle());
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he2t->handle());
+
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he4t->handle());
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he4->handle());
+        
+        // Eliminar las dos caras originales
+        face2->markDeleted();
+        original_he->set_deleted();
+    } else if (original_he->is_boundary() && opposing_he->get_parent_face() == std::numeric_limits<unsigned int>::max()) {
+        Face* face1 = &all_faces[original_he->get_parent_face()];
+        
+        // Step 1: Crear el nuevo vértice
+        new_v.set_handle(all_vertices.size());
+        all_vertices.push_back(new_v);
+        
+        // Step 2: Crear los nuevos half-edges
+        // Original half-edge (v1 -> v2) será dividido en dos
+        HalfEdge* he1 = addHalfEdge(v1, &new_v);
+        HalfEdge* he1t = addHalfEdge(&new_v, v1);
+        HalfEdge* he2 = addHalfEdge(&new_v, v2);
+        HalfEdge* he2t = addHalfEdge(v2, &new_v);
+
+        he1->set_boundary(true);
+        he1t->set_boundary(true);
+        he2->set_boundary(true);
+        he2t->set_boundary(true);
+
+        HalfEdge* s1 = &all_half_edges[original_he->next_handle()];
+        HalfEdge* s2 = &all_half_edges[s1->next_handle()];
+
+        // Step 3: Crear los half-edges internos para las nuevas caras
+        HalfEdge* he3 = addHalfEdge(s1->get_vertex_two(), &new_v);
+        HalfEdge* he3t = addHalfEdge(&new_v, s1->get_vertex_two());
+        
+        // Step 4: Crear las nuevas caras (4 en total)
+        Face* new_face1 = addFace(&new_v, s1->get_vertex_one(), s1->get_vertex_two());  // Primera cara (nueva)
+        Face* new_face2 = addFace(&new_v, s2->get_vertex_one(), s2->get_vertex_two());  // Segunda cara (nueva)
+
+        // Step 5: Asignar los half-edges a las nuevas caras
+        new_face1->set_one_half_edge(s1);
+        new_face2->set_one_half_edge(s2);
+
+        he2->set_parent_face(new_face1->handle());
+        s1->set_parent_face(new_face1->handle());
+        he3->set_parent_face(new_face1->handle());
+
+        he1->set_parent_face(new_face2->handle());
+        he3t->set_parent_face(new_face2->handle());
+        s2->set_parent_face(new_face2->handle());
+
+        he1t->set_parent_face(std::numeric_limits<unsigned int>::max());
+        he2t->set_parent_face(std::numeric_limits<unsigned int>::max());
+
+        // Step 6: Conectar half-edges
+        // Para cada nuevo triángulo, conectar el half-edge entrante y el saliente
+        he1->set_opposing_half_edge(he1t->handle());
+        he1t->set_opposing_half_edge(he1->handle());
+        
+        he2->set_opposing_half_edge(he2t->handle());
+        he2t->set_opposing_half_edge(he2->handle());
+
+        he3->set_opposing_half_edge(he3t->handle());
+        he3t->set_opposing_half_edge(he3->handle());
+
+        // Step 7: Actualizar conectividad (nuevos half-edges y caras)
+        // Conectar half-edges entre las nuevas caras
+        he1->set_next_handle(he3t->handle());
+        he3t->set_next_handle(s2->handle());
+        s2->set_next_handle(he1->handle());
+
+        he2->set_next_handle(s1->handle());
+        s1->set_next_handle(he3->handle());
+        he3->set_next_handle(he2->handle());
+
+        he1t->set_next_handle(std::numeric_limits<unsigned int>::max());
+        he2t->set_next_handle(std::numeric_limits<unsigned int>::max());
+
+        // Step 8: Actualizar vértices
+        v1->add_outgoing_half_edge(he1->handle());
+        v1->add_incoming_half_edge(he1t->handle());
+
+        v2->add_incoming_half_edge(he2->handle());
+        v2->add_outgoing_half_edge(he2t->handle());
+
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he1->handle());
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he1t->handle());
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he2->handle());
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he2t->handle());
+
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he3t->handle());
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he3->handle());
+        
+        // Eliminar las dos caras originales
+        face1->markDeleted();
+        original_he->set_deleted();
+
+    } else {
+        Face* face1 = &all_faces[original_he->get_parent_face()];
+        Face* face2 = &all_faces[opposing_he->get_parent_face()];
+        
+        // Step 1: Crear el nuevo vértice
+        new_v.set_handle(all_vertices.size());
+        all_vertices.push_back(new_v);
+        
+        // Step 2: Crear los nuevos half-edges
+        // Original half-edge (v1 -> v2) será dividido en dos
+        HalfEdge* he1 = addHalfEdge(v1, &new_v);
+        HalfEdge* he1t = addHalfEdge(&new_v, v1);
+        HalfEdge* he2 = addHalfEdge(&new_v, v2);
+        HalfEdge* he2t = addHalfEdge(v2, &new_v);
+
+        HalfEdge* s1 = &all_half_edges[original_he->next_handle()];
+        HalfEdge* s2 = &all_half_edges[s1->next_handle()];
+        HalfEdge* s3 = &all_half_edges[opposing_he->next_handle()];
+        HalfEdge* s4 = &all_half_edges[s3->next_handle()];
+
+        // Step 3: Crear los half-edges internos para las nuevas caras
+        HalfEdge* he3 = addHalfEdge(s1->get_vertex_two(), &new_v);
+        HalfEdge* he3t = addHalfEdge(&new_v, s1->get_vertex_two());
+        HalfEdge* he4 = addHalfEdge(s3->get_vertex_two(), &new_v);
+        HalfEdge* he4t = addHalfEdge(&new_v, s3->get_vertex_two());
+        
+
+        // Step 4: Crear las nuevas caras (4 en total)
+        Face* new_face1 = addFace(&new_v, s1->get_vertex_one(), s1->get_vertex_two());  // Primera cara (nueva)
+        Face* new_face2 = addFace(&new_v, s2->get_vertex_one(), s2->get_vertex_two());  // Segunda cara (nueva)
+        Face* new_face3 = addFace(&new_v, s3->get_vertex_one(), s3->get_vertex_two());  // Tercera cara (nueva)
+        Face* new_face4 = addFace(&new_v, s4->get_vertex_one(), s4->get_vertex_two());  // Cuarta cara (nueva)
+
+
+        // Step 5: Asignar los half-edges a las nuevas caras
+        new_face1->set_one_half_edge(s1);
+        new_face2->set_one_half_edge(s2);
+        new_face3->set_one_half_edge(s3);
+        new_face4->set_one_half_edge(s4);
+
+        he2->set_parent_face(new_face1->handle());
+        s1->set_parent_face(new_face1->handle());
+        he3->set_parent_face(new_face1->handle());
+
+        he1->set_parent_face(new_face2->handle());
+        he3t->set_parent_face(new_face2->handle());
+        s2->set_parent_face(new_face2->handle());
+
+        he1t->set_parent_face(new_face3->handle());
+        s3->set_parent_face(new_face3->handle());
+        he4->set_parent_face(new_face3->handle());
+
+        he4t->set_parent_face(new_face4->handle());
+        s4->set_parent_face(new_face4->handle());
+        he2t->set_parent_face(new_face4->handle());
+
+        // Step 6: Conectar half-edges
+        // Para cada nuevo triángulo, conectar el half-edge entrante y el saliente
+        he1->set_opposing_half_edge(he1t->handle());
+        he1t->set_opposing_half_edge(he1->handle());
+        
+        he2->set_opposing_half_edge(he2t->handle());
+        he2t->set_opposing_half_edge(he2->handle());
+
+        he3->set_opposing_half_edge(he3t->handle());
+        he3t->set_opposing_half_edge(he3->handle());
+
+        he4->set_opposing_half_edge(he4t->handle());
+        he4t->set_opposing_half_edge(he4->handle());
+
+        // Step 7: Actualizar conectividad (nuevos half-edges y caras)
+        // Conectar half-edges entre las nuevas caras
+        he1->set_next_handle(he3t->handle());
+        he3t->set_next_handle(s2->handle());
+        s2->set_next_handle(he1->handle());
+
+        he2->set_next_handle(s1->handle());
+        s1->set_next_handle(he3->handle());
+        he3->set_next_handle(he2->handle());
+
+        he1t->set_next_handle(s3->handle());
+        s3->set_next_handle(he4->handle());
+        he4->set_next_handle(he1t->handle());
+
+        he4t->set_next_handle(s4->handle());
+        s4->set_next_handle(he2t->handle());
+        he2t->set_next_handle(he4t->handle());
+
+        // Step 8: Actualizar vértices
+        v1->add_outgoing_half_edge(he1->handle());
+        v1->add_incoming_half_edge(he1t->handle());
+
+        v2->add_incoming_half_edge(he2->handle());
+        v2->add_outgoing_half_edge(he2t->handle());
+
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he1->handle());
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he1t->handle());
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he2->handle());
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he2t->handle());
+
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he3t->handle());
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he3->handle());
+        all_vertices[all_vertices.size()-1].add_outgoing_half_edge(he4t->handle());
+        all_vertices[all_vertices.size()-1].add_incoming_half_edge(he4->handle());
+        
+        // Eliminar las dos caras originales
+        face1->markDeleted();
+        face2->markDeleted();
+        original_he->set_deleted();
+    }
+
+}
+
+
+
 bool Mesh::isInsideTriangle(Vertex& v, Face* face) {
     // Use geometric predicates or cross product-based method to check
     Vertex* v1 = face->get_vertex_one();

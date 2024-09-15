@@ -60,3 +60,11 @@ void HalfEdge::set_opposing_half_edge(unsigned int _i) {
 unsigned int HalfEdge::get_opposing_half_edge() {
     return opposing_half_edge;
 }
+
+void HalfEdge::set_deleted() {
+    deleted = true;
+}
+
+bool HalfEdge::get_deleted() {
+    return deleted;
+}

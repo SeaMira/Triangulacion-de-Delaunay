@@ -32,6 +32,9 @@ class HalfEdge {
         void set_opposing_half_edge(unsigned int _i);
         unsigned int get_opposing_half_edge();
 
+        void set_deleted();
+        bool get_deleted();
+
     private:
         Vertex *v1, *v2;
         unsigned int half_edge_handle;
