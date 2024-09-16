@@ -27,17 +27,17 @@ HalfEdge *Face::get_one_half_edge() {
     return one_half_edge;
 }
 
-void Face::swap_vertex(Vertex *_v1 = nullptr, Vertex *_v2 = nullptr, Vertex *_v3 = nullptr) {
-    if (_v1 != nullptr) {
-        v1 = _v1;
-    }
-    if (_v2 != nullptr) {
-        v2 = _v2;
-    }
-    if (_v3 != nullptr) {
-        v3 = _v3;
-    }
-}
+// void Face::swap_vertex(Vertex *_v1 = nullptr, Vertex *_v2 = nullptr, Vertex *_v3 = nullptr) {
+//     if (_v1 != nullptr) {
+//         v1 = _v1;
+//     }
+//     if (_v2 != nullptr) {
+//         v2 = _v2;
+//     }
+//     if (_v3 != nullptr) {
+//         v3 = _v3;
+//     }
+// }
 
 Vertex *Face::get_vertex_one() {
     return v1;

@@ -2,6 +2,7 @@
 
 Mesh::Mesh(std::vector<Vertex> points) {
     double min_x = points[0].get_x(), min_y = points[0].get_y(), max_x = points[0].get_x(), max_y = points[0].get_y();
+    std::cout << min_x << " " << min_y << " " << max_x << " " << max_y << std::endl;
     for (int i = 1; i < points.size(); i++) {
         double x = points[i].get_x();
         double y = points[i].get_y();
@@ -10,6 +11,7 @@ Mesh::Mesh(std::vector<Vertex> points) {
         if (y < min_y) min_y = y;
         if (y > max_y) max_y = y;
     }
+    std::cout << min_x << " " << min_y << " " << max_x << " " << max_y << std::endl;
 
     // create containing rectangle
     //top right
@@ -24,43 +26,51 @@ Mesh::Mesh(std::vector<Vertex> points) {
     //down right
     all_vertices.push_back(Vertex(max_x+1.0, min_y-1.0));
     all_vertices[3].set_handle(3);
+    std::cout << "after rectangle vertices" << std::endl;
 
     // create first faces
     all_faces.push_back(Face(&all_vertices[0], &all_vertices[1], &all_vertices[3]));
     all_faces[0].set_handle(0);
+    std::cout << "after first face" << std::endl;
 
     all_faces.push_back(Face(&all_vertices[1], &all_vertices[2], &all_vertices[3]));
     all_faces[1].set_handle(1);
+    std::cout << "after second face" << std::endl;
 
     // top edge
     all_half_edges.push_back(HalfEdge(&all_vertices[0], &all_vertices[1]));
     all_half_edges[0].set_handle(0);
     all_half_edges.push_back(HalfEdge(&all_vertices[1], &all_vertices[0]));
     all_half_edges[1].set_handle(1);
+    std::cout << "after top edge" << std::endl;
 
     // medium edge
     all_half_edges.push_back(HalfEdge(&all_vertices[1], &all_vertices[3]));
     all_half_edges[2].set_handle(2);
     all_half_edges.push_back(HalfEdge(&all_vertices[3], &all_vertices[1]));
     all_half_edges[3].set_handle(3);
+    std::cout << "after medium edge" << std::endl;
     
     // right edge
     all_half_edges.push_back(HalfEdge(&all_vertices[3], &all_vertices[0]));
     all_half_edges[4].set_handle(4);
     all_half_edges.push_back(HalfEdge(&all_vertices[0], &all_vertices[3]));
     all_half_edges[5].set_handle(5);
+    std::cout << "after right edge" << std::endl;
 
     // left edge
     all_half_edges.push_back(HalfEdge(&all_vertices[1], &all_vertices[2]));
     all_half_edges[6].set_handle(6);
     all_half_edges.push_back(HalfEdge(&all_vertices[2], &all_vertices[1]));
     all_half_edges[7].set_handle(7);
+    std::cout << "after left edge" << std::endl;
 
     // down edge
     all_half_edges.push_back(HalfEdge(&all_vertices[2], &all_vertices[3]));
     all_half_edges[8].set_handle(8);
     all_half_edges.push_back(HalfEdge(&all_vertices[3], &all_vertices[2]));
     all_half_edges[9].set_handle(9);
+    std::cout << "after down edge" << std::endl;
 
     // preparing initial vertex
     all_vertices[0].add_incoming_half_edge(1);
@@ -86,6 +96,7 @@ Mesh::Mesh(std::vector<Vertex> points) {
     all_vertices[3].add_outgoing_half_edge(3);
     all_vertices[3].add_outgoing_half_edge(4);
     all_vertices[3].add_outgoing_half_edge(9);
+    std::cout << "after setting going edges on vertices" << std::endl;
 
     // preparing initial half edges
     all_half_edges[0].set_parent_face(0);
@@ -143,13 +154,13 @@ Mesh::Mesh(std::vector<Vertex> points) {
     all_faces[1].set_one_half_edge(&all_half_edges[8]);
 
     for (int i = 0; i < points.size(); i++) {
-        if (!hasVertex(points[i])) addVertex(points[i]);
+        addVertex(points[i]);
     }
 
-    removeVertex(0);
-    removeVertex(1);
-    removeVertex(2);
-    removeVertex(3);
+    // removeVertex(0);
+    // removeVertex(1);
+    // removeVertex(2);
+    // removeVertex(3);
 
 }
 
@@ -166,15 +177,18 @@ bool Mesh::hasVertex(Vertex v) {
 }
 
 void Mesh::addVertex(Vertex& new_v) {
+
+    std::cout << "addVertex " << new_v.get_x() << " " << new_v.get_y() << std::endl;
     // Step 1: Check if the vertex is already in the mesh
     if (hasVertex(new_v)) {
         return;
     }
 
     // Step 2: Randomly select a half-edge and start the search
-    unsigned int init_edge_handle = getRandomInt(0, all_half_edges.size() - 1);
-    HalfEdge* current_edge = &all_half_edges[init_edge_handle];
-    Face* current_face = &all_faces[current_edge->get_parent_face()];
+    unsigned int init_face_handle = getRandomInt(0, all_faces.size() - 1);
+    std::cout << init_face_handle << std::endl;
+    Face* current_face = &all_faces[init_face_handle];
+    HalfEdge* current_edge = current_face->get_one_half_edge();
 
     bool he1_on = isOnSegment(current_edge, &new_v);
     bool he2_on = isOnSegment(next(current_edge), &new_v);
@@ -203,25 +217,37 @@ void Mesh::addVertex(Vertex& new_v) {
 
         // Step to the next face using the half-edge that connects to the closest vertex
         HalfEdge* next_edge = current_edge; // Starting edge
-        for (HalfEdge& he : all_half_edges) {
-            if (he.get_vertex_one() == closest_vertex && he.get_opposing_half_edge() != std::numeric_limits<unsigned int>::max()) {
-                next_edge = &all_half_edges[he.get_opposing_half_edge()];
-                break;
-            }
-        }
+        // for (HalfEdge& he : all_half_edges) {
+        //     if (he.get_vertex_one() == closest_vertex && he.get_opposing_half_edge() != std::numeric_limits<unsigned int>::max()) {
+        //         next_edge = &all_half_edges[he.get_opposing_half_edge()];
+        //         break;
+        //     }
+        // }
+
+        if (current_edge->get_vertex_one() == closest_vertex) next_edge = &all_half_edges[current_edge->get_opposing_half_edge()];
+        else if (next(current_edge)->get_vertex_one() == closest_vertex) next_edge = &all_half_edges[next(current_edge)->get_opposing_half_edge()];
+        else next_edge = &all_half_edges[next(next(current_edge))->get_opposing_half_edge()];
+
+        std::cout << "on triangle of points:" << std::endl;
+        std::cout << current_face->get_vertex_one()->get_x() << " " << current_face->get_vertex_one()->get_y() << std::endl;
+        std::cout << current_face->get_vertex_two()->get_x() << " " << current_face->get_vertex_two()->get_y() << std::endl;
+        std::cout << current_face->get_vertex_three()->get_x() << " " << current_face->get_vertex_three()->get_y() << std::endl;
+        std::cout << "with edge:" << std::endl;
         current_edge = next_edge;
         current_face = &all_faces[current_edge->get_parent_face()];
         he1_on = isOnSegment(current_edge, &new_v);
         he2_on = isOnSegment(next(current_edge), &new_v);
         he3_on = isOnSegment(next(next(current_edge)), &new_v);
     }
+    std::cout << current_edge->get_vertex_one()->get_x() << " " << current_edge->get_vertex_one()->get_y() << std::endl;
+    std::cout << current_edge->get_vertex_two()->get_x() << " " << current_edge->get_vertex_two()->get_y() << std::endl;
 
     if (he1_on) {
-
+        splitEdgeWithVertex(new_v, current_edge);
     } else if (he2_on) {
-
+        splitEdgeWithVertex(new_v, next(current_edge));
     } else if (he3_on) {
-
+        splitEdgeWithVertex(new_v, next(next(current_edge)));
     } else addingVertexInT(new_v, current_face);
 }
 
@@ -697,4 +723,14 @@ bool Mesh::isOnSegment(HalfEdge* edge, Vertex* vertex) {
 
     // Return true if the point lies within the bounding box of the segment
     return (pd[0] >= min_x && pd[0] <= max_x && pd[1] >= min_y && pd[1] <= max_y);
+}
+
+// Devuelve una referencia al vector de vértices
+std::vector<Vertex>& Mesh::getAllVertices() {
+    return all_vertices;
+}
+
+// Devuelve una referencia al vector de caras
+std::vector<Face>& Mesh::getAllFaces() {
+    return all_faces;
 }

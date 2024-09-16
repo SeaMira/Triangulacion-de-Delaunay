@@ -1,0 +1,6 @@
+D:/Users/Escritorio/U/Prim2024-10moSem/Mallas-Geo-y-Apps/Tareas/Triangulacion-de-Delaunay/mesh_build_cmake/ninja-release/CMakeFiles/main.dir
+D:/Users/Escritorio/U/Prim2024-10moSem/Mallas-Geo-y-Apps/Tareas/Triangulacion-de-Delaunay/mesh_build_cmake/ninja-release/CMakeFiles/edit_cache.dir
+D:/Users/Escritorio/U/Prim2024-10moSem/Mallas-Geo-y-Apps/Tareas/Triangulacion-de-Delaunay/mesh_build_cmake/ninja-release/CMakeFiles/rebuild_cache.dir
+D:/Users/Escritorio/U/Prim2024-10moSem/Mallas-Geo-y-Apps/Tareas/Triangulacion-de-Delaunay/mesh_build_cmake/ninja-release/src/CMakeFiles/mesh_dependencies.dir
+D:/Users/Escritorio/U/Prim2024-10moSem/Mallas-Geo-y-Apps/Tareas/Triangulacion-de-Delaunay/mesh_build_cmake/ninja-release/src/CMakeFiles/edit_cache.dir
+D:/Users/Escritorio/U/Prim2024-10moSem/Mallas-Geo-y-Apps/Tareas/Triangulacion-de-Delaunay/mesh_build_cmake/ninja-release/src/CMakeFiles/rebuild_cache.dir

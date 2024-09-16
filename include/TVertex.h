@@ -1,8 +1,6 @@
 #ifndef _VERTEX_
 #define _VERTEX_
 
-#include "THalfEdge.h"
-#include "TFace.h"
 #include "TCommon.h"
 
 class Vertex {

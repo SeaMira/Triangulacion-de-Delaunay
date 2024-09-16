@@ -1,10 +1,10 @@
 #include <memory>
 #include <fstream>
-#include "TVertex.h"
-#include "THalfEdge.h"
+// #include "TVertex.h"
+// #include "THalfEdge.h"
 #include "TFace.h"
 #include "utils.h"
-#include "predicates.h"
+#include "predicates2.h"
 
 class Mesh {
     public:
@@ -26,6 +26,9 @@ class Mesh {
         bool hasVertex(Vertex v);
 
         double distance(Vertex* v1, Vertex* v2);
+
+        std::vector<Vertex>& getAllVertices();  // Devolver una referencia al vector de vértices
+        std::vector<Face>& getAllFaces();
 
     private:
         std::vector<Face> all_faces;

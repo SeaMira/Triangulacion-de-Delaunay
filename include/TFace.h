@@ -1,9 +1,9 @@
 #ifndef _FACE_
 #define _FACE_
 
-#include "TVertex.h"
+// #include "TVertex.h"
 #include "THalfEdge.h"
-#include "TCommon.h"
+// #include "TCommon.h"
 
 class Face {
     public:
@@ -23,7 +23,7 @@ class Face {
         void set_one_half_edge(HalfEdge *half_edge);
         HalfEdge *get_one_half_edge();
 
-        void swap_vertex(Vertex *_v1 = nullptr, Vertex *_v2 = nullptr, Vertex *_v3 = nullptr);
+        // void swap_vertex(Vertex *_v1 = nullptr, Vertex *_v2 = nullptr, Vertex *_v3 = nullptr);
 
         Vertex *get_vertex_one();
         Vertex *get_vertex_two();

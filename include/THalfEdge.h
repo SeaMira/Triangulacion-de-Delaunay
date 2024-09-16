@@ -2,8 +2,8 @@
 #define _HALF_EDGE_
 
 #include "TVertex.h"
-#include "TFace.h"
-#include "TCommon.h"
+// #include "TFace.h"
+// #include "TCommon.h"
 
 
 class HalfEdge {
