@@ -1,5 +1,21 @@
 #include "TMesh.h"
 
+void printVertex(Vertex* v) {
+    std::cout << v->get_x() << " " << v->get_y() << std::endl;
+}
+
+void printHalfEdge(HalfEdge* hf) {
+    printVertex(hf->get_vertex_one());
+    printVertex(hf->get_vertex_two());
+
+}
+
+void printFace(Face* f) {
+    printVertex( f->get_vertex_one());
+    printVertex( f->get_vertex_two());
+    printVertex( f->get_vertex_three());
+}
+
 Mesh::Mesh(std::vector<Vertex> points) {
     double min_x = points[0].get_x(), min_y = points[0].get_y(), max_x = points[0].get_x(), max_y = points[0].get_y();
     std::cout << min_x << " " << min_y << " " << max_x << " " << max_y << std::endl;
@@ -40,118 +56,83 @@ Mesh::Mesh(std::vector<Vertex> points) {
     // top edge
     all_half_edges.push_back(HalfEdge(&all_vertices[0], &all_vertices[1]));
     all_half_edges[0].set_handle(0);
-    all_half_edges.push_back(HalfEdge(&all_vertices[1], &all_vertices[0]));
-    all_half_edges[1].set_handle(1);
     std::cout << "after top edge" << std::endl;
 
     // medium edge
     all_half_edges.push_back(HalfEdge(&all_vertices[1], &all_vertices[3]));
-    all_half_edges[2].set_handle(2);
+    all_half_edges[1].set_handle(1);
     all_half_edges.push_back(HalfEdge(&all_vertices[3], &all_vertices[1]));
-    all_half_edges[3].set_handle(3);
+    all_half_edges[2].set_handle(2);
     std::cout << "after medium edge" << std::endl;
     
     // right edge
     all_half_edges.push_back(HalfEdge(&all_vertices[3], &all_vertices[0]));
-    all_half_edges[4].set_handle(4);
-    all_half_edges.push_back(HalfEdge(&all_vertices[0], &all_vertices[3]));
-    all_half_edges[5].set_handle(5);
+    all_half_edges[3].set_handle(3);
     std::cout << "after right edge" << std::endl;
 
     // left edge
     all_half_edges.push_back(HalfEdge(&all_vertices[1], &all_vertices[2]));
-    all_half_edges[6].set_handle(6);
-    all_half_edges.push_back(HalfEdge(&all_vertices[2], &all_vertices[1]));
-    all_half_edges[7].set_handle(7);
+    all_half_edges[4].set_handle(4);
     std::cout << "after left edge" << std::endl;
 
     // down edge
     all_half_edges.push_back(HalfEdge(&all_vertices[2], &all_vertices[3]));
-    all_half_edges[8].set_handle(8);
-    all_half_edges.push_back(HalfEdge(&all_vertices[3], &all_vertices[2]));
-    all_half_edges[9].set_handle(9);
+    all_half_edges[5].set_handle(5);
     std::cout << "after down edge" << std::endl;
 
     // preparing initial vertex
-    all_vertices[0].add_incoming_half_edge(1);
-    all_vertices[0].add_incoming_half_edge(4);
     all_vertices[0].add_outgoing_half_edge(0);
-    all_vertices[0].add_outgoing_half_edge(5);
+    all_vertices[0].add_incoming_half_edge(3);
     
     all_vertices[1].add_incoming_half_edge(0);
-    all_vertices[1].add_incoming_half_edge(3);
-    all_vertices[1].add_incoming_half_edge(7);
+    all_vertices[1].add_incoming_half_edge(2);
     all_vertices[1].add_outgoing_half_edge(1);
-    all_vertices[1].add_outgoing_half_edge(2);
-    all_vertices[1].add_outgoing_half_edge(6);
+    all_vertices[1].add_outgoing_half_edge(4);
     
-    all_vertices[2].add_incoming_half_edge(6);
-    all_vertices[2].add_incoming_half_edge(9);
-    all_vertices[2].add_outgoing_half_edge(7);
-    all_vertices[2].add_outgoing_half_edge(8);
+    all_vertices[2].add_incoming_half_edge(4);
+    all_vertices[2].add_outgoing_half_edge(5);
 
-    all_vertices[3].add_incoming_half_edge(2);
+    all_vertices[3].add_incoming_half_edge(1);
     all_vertices[3].add_incoming_half_edge(5);
-    all_vertices[3].add_incoming_half_edge(8);
+    all_vertices[3].add_outgoing_half_edge(2);
     all_vertices[3].add_outgoing_half_edge(3);
-    all_vertices[3].add_outgoing_half_edge(4);
-    all_vertices[3].add_outgoing_half_edge(9);
     std::cout << "after setting going edges on vertices" << std::endl;
 
     // preparing initial half edges
     all_half_edges[0].set_parent_face(0);
-    all_half_edges[0].set_next_handle(2);
+    all_half_edges[0].set_next_handle(1);
     all_half_edges[0].set_boundary(true);
-    all_half_edges[0].set_opposing_half_edge(1);
+    all_half_edges[0].set_opposing_half_edge(std::numeric_limits<unsigned int>::max());
 
-    all_half_edges[1].set_parent_face(std::numeric_limits<unsigned int>::max());
-    all_half_edges[1].set_next_handle(std::numeric_limits<unsigned int>::max());
-    all_half_edges[1].set_boundary(true);
-    all_half_edges[1].set_opposing_half_edge(0);
+    all_half_edges[1].set_parent_face(0);
+    all_half_edges[1].set_next_handle(3);
+    all_half_edges[1].set_boundary(false);
+    all_half_edges[1].set_opposing_half_edge(2);
     
-    all_half_edges[2].set_parent_face(0);
+    all_half_edges[2].set_parent_face(1);
     all_half_edges[2].set_next_handle(4);
     all_half_edges[2].set_boundary(false);
-    all_half_edges[2].set_opposing_half_edge(3);
+    all_half_edges[2].set_opposing_half_edge(1);
     
-    all_half_edges[3].set_parent_face(1);
-    all_half_edges[3].set_next_handle(6);
-    all_half_edges[3].set_boundary(false);
-    all_half_edges[3].set_opposing_half_edge(2);
+    all_half_edges[3].set_parent_face(0);
+    all_half_edges[3].set_next_handle(0);
+    all_half_edges[3].set_boundary(true);
+    all_half_edges[3].set_opposing_half_edge(std::numeric_limits<unsigned int>::max());
     
-    all_half_edges[4].set_parent_face(0);
-    all_half_edges[4].set_next_handle(0);
+    all_half_edges[4].set_parent_face(1);
+    all_half_edges[4].set_next_handle(5);
     all_half_edges[4].set_boundary(true);
-    all_half_edges[4].set_opposing_half_edge(5);
+    all_half_edges[4].set_opposing_half_edge(std::numeric_limits<unsigned int>::max());
     
-    all_half_edges[5].set_parent_face(std::numeric_limits<unsigned int>::max());
-    all_half_edges[5].set_next_handle(std::numeric_limits<unsigned int>::max());
+    all_half_edges[5].set_parent_face(1);
+    all_half_edges[5].set_next_handle(2);
     all_half_edges[5].set_boundary(true);
-    all_half_edges[5].set_opposing_half_edge(4);
+    all_half_edges[5].set_opposing_half_edge(std::numeric_limits<unsigned int>::max());
     
-    all_half_edges[6].set_parent_face(1);
-    all_half_edges[6].set_next_handle(8);
-    all_half_edges[6].set_boundary(true);
-    all_half_edges[6].set_opposing_half_edge(7);
-    
-    all_half_edges[7].set_parent_face(std::numeric_limits<unsigned int>::max());
-    all_half_edges[7].set_next_handle(std::numeric_limits<unsigned int>::max());
-    all_half_edges[7].set_boundary(true);
-    all_half_edges[7].set_opposing_half_edge(6);
-    
-    all_half_edges[8].set_parent_face(1);
-    all_half_edges[8].set_next_handle(3);
-    all_half_edges[8].set_boundary(true);
-    all_half_edges[8].set_opposing_half_edge(9);
-    
-    all_half_edges[9].set_parent_face(std::numeric_limits<unsigned int>::max());
-    all_half_edges[9].set_next_handle(std::numeric_limits<unsigned int>::max());
-    all_half_edges[9].set_boundary(true);
-    all_half_edges[9].set_opposing_half_edge(8);
 
     // preparing initial faces
     all_faces[0].set_one_half_edge(&all_half_edges[0]);
-    all_faces[1].set_one_half_edge(&all_half_edges[8]);
+    all_faces[1].set_one_half_edge(&all_half_edges[5]);
 
     for (int i = 0; i < points.size(); i++) {
         addVertex(points[i]);
@@ -228,19 +209,23 @@ void Mesh::addVertex(Vertex& new_v) {
         else if (next(current_edge)->get_vertex_one() == closest_vertex) next_edge = &all_half_edges[next(current_edge)->get_opposing_half_edge()];
         else next_edge = &all_half_edges[next(next(current_edge))->get_opposing_half_edge()];
 
-        std::cout << "on triangle of points:" << std::endl;
-        std::cout << current_face->get_vertex_one()->get_x() << " " << current_face->get_vertex_one()->get_y() << std::endl;
-        std::cout << current_face->get_vertex_two()->get_x() << " " << current_face->get_vertex_two()->get_y() << std::endl;
-        std::cout << current_face->get_vertex_three()->get_x() << " " << current_face->get_vertex_three()->get_y() << std::endl;
-        std::cout << "with edge:" << std::endl;
         current_edge = next_edge;
         current_face = &all_faces[current_edge->get_parent_face()];
         he1_on = isOnSegment(current_edge, &new_v);
         he2_on = isOnSegment(next(current_edge), &new_v);
         he3_on = isOnSegment(next(next(current_edge)), &new_v);
     }
+    std::cout << "on triangle of points:" << std::endl;
+    std::cout << current_face->get_vertex_one()->get_x() << " " << current_face->get_vertex_one()->get_y() << std::endl;
+    std::cout << current_face->get_vertex_two()->get_x() << " " << current_face->get_vertex_two()->get_y() << std::endl;
+    std::cout << current_face->get_vertex_three()->get_x() << " " << current_face->get_vertex_three()->get_y() << std::endl;
+    std::cout << "with edge:" << std::endl;
     std::cout << current_edge->get_vertex_one()->get_x() << " " << current_edge->get_vertex_one()->get_y() << std::endl;
     std::cout << current_edge->get_vertex_two()->get_x() << " " << current_edge->get_vertex_two()->get_y() << std::endl;
+    std::cout << "is on segment 1 " << he1_on << std::endl;
+    std::cout << "is on segment 2 " << he2_on << std::endl;
+    std::cout << "is on segment 3 " << he3_on << std::endl;
+        
 
     if (he1_on) {
         splitEdgeWithVertex(new_v, current_edge);
@@ -282,11 +267,19 @@ void Mesh::addingVertexInT(Vertex& new_v, Face* current_face) {
     Vertex* v1 = current_face->get_vertex_one();
     Vertex* v2 = current_face->get_vertex_two();
     Vertex* v3 = current_face->get_vertex_three();
+    std::cout << "nv "<< nv->get_x()<< " " << nv->get_y() << std::endl;
+    std::cout << "v1 "<< v1->get_x()<< " " << v1->get_y() << std::endl;
+    std::cout << "v2 "<< v2->get_x()<< " " << v2->get_y() << std::endl;
+    std::cout << "v3 "<< v3->get_x()<< " " << v3->get_y() << std::endl;
+    
 
     // Obtain the original half-edges of the current face
     HalfEdge* original_he1 = current_face->get_one_half_edge();
     HalfEdge* original_he2 = &all_half_edges[original_he1->next_handle()];
     HalfEdge* original_he3 = &all_half_edges[original_he2->next_handle()];
+    std::cout << "he1 "<< original_he1->get_vertex_one()->get_x()<< " " << original_he1->get_vertex_one()->get_y() << std::endl;
+    std::cout << "he2 "<< original_he2->get_vertex_one()->get_x()<< " " << original_he2->get_vertex_one()->get_y() << std::endl;
+    std::cout << "he3 "<< original_he3->get_vertex_one()->get_x()<< " " << original_he3->get_vertex_one()->get_y() << std::endl;
 
     if (original_he1->get_vertex_one() == v2) {
         HalfEdge* temp = original_he1;
@@ -308,17 +301,17 @@ void Mesh::addingVertexInT(Vertex& new_v, Face* current_face) {
     current_face->markDeleted();
 
     // Create three new faces
-    Face* new_face1 = addFace(&new_v, v1, v2);
-    Face* new_face2 = addFace(&new_v, v2, v3);
-    Face* new_face3 = addFace(&new_v, v3, v1);
+    Face* new_face1 = addFace(nv, v1, v2);
+    Face* new_face2 = addFace(nv, v2, v3);
+    Face* new_face3 = addFace(nv, v3, v1);
 
     // Step 6: Create new half-edges and update connectivity
-    HalfEdge* he1 = addHalfEdge(&new_v, v1);
-    HalfEdge* he1t = addHalfEdge(v1, &new_v);
-    HalfEdge* he2 = addHalfEdge(&new_v, v2);
-    HalfEdge* he2t = addHalfEdge(v2, &new_v);
-    HalfEdge* he3 = addHalfEdge(&new_v, v3);
-    HalfEdge* he3t = addHalfEdge(v3, &new_v);
+    HalfEdge* he1 = addHalfEdge(nv, v1);
+    HalfEdge* he1t = addHalfEdge(v1, nv);
+    HalfEdge* he2 = addHalfEdge(nv, v2);
+    HalfEdge* he2t = addHalfEdge(v2, nv);
+    HalfEdge* he3 = addHalfEdge(nv, v3);
+    HalfEdge* he3t = addHalfEdge(v3, nv);
 
 
     // Update the connectivity between half-edges and faces if necessary
@@ -369,6 +362,10 @@ void Mesh::addingVertexInT(Vertex& new_v, Face* current_face) {
     new_face1->set_one_half_edge(he1);
     new_face2->set_one_half_edge(he2);
     new_face3->set_one_half_edge(he3);
+
+    printFace(new_face1);
+    printFace(new_face2);
+    printFace(new_face3);
 }
 
 
@@ -734,3 +731,4 @@ std::vector<Vertex>& Mesh::getAllVertices() {
 std::vector<Face>& Mesh::getAllFaces() {
     return all_faces;
 }
+
