@@ -123,6 +123,8 @@ def transform_coordinates(x, y, offset_x, offset_y, zoom_factor, screen_width, s
 # Inicializar pygame
 pygame.init()
 screen_width, screen_height = 1024, 768
+show_vertexes = False
+show_deleted_edges = False
 screen = pygame.display.set_mode([screen_width, screen_height])
 pygame.display.set_caption("Delaunay Mesh with Pan and Zoom (Mouse)")
 
@@ -131,9 +133,10 @@ def draw_mesh():
     screen.fill((0, 0, 0))  # Limpiar la pantalla
 
     # Dibujar los vértices
-    for v in mesh.vertices:
-        transformed_x, transformed_y = transform_coordinates(v.x, v.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
-        pygame.draw.circle(screen, (255, 255, 255), (transformed_x, transformed_y), 3)
+    if show_vertexes:
+        for v in mesh.vertices:
+            transformed_x, transformed_y = transform_coordinates(v.x, v.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
+            pygame.draw.circle(screen, (255, 255, 255), (transformed_x, transformed_y), 3)
 
     # Dibujar los halfedges (líneas)
     for he in mesh.halfedges:
@@ -143,7 +146,7 @@ def draw_mesh():
         transformed_end = transform_coordinates(end_vertex.x, end_vertex.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
         if not he.deleted:
             pygame.draw.line(screen, (0, 255, 0), transformed_start, transformed_end)
-        else:
+        elif show_deleted_edges:
             pygame.draw.line(screen, (255, 255, 255), transformed_start, transformed_end)
     pygame.display.update()
 
@@ -156,6 +159,12 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a:
+                show_vertexes = not show_vertexes
+            elif event.key == pygame.K_s:
+                show_deleted_edges = not show_deleted_edges
+
         # Movimiento (Pan) con el botón izquierdo del ratón
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Botón izquierdo del ratón

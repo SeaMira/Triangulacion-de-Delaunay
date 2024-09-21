@@ -1,9 +1,9 @@
 import unittest
-import src2.config
-from src2.HalfEdgeMesh import HalfedgeMesh
-from src2.vertex import Vertex
-from src2.HalfEdge import Halfedge
-from src2.facet import Facet
+import src.config
+from src.HalfEdgeMesh import HalfedgeMesh
+from src.vertex import Vertex
+from src.HalfEdge import Halfedge
+from src.facet import Facet
 
 class TestHalfedgeMesh(unittest.TestCase):
 
