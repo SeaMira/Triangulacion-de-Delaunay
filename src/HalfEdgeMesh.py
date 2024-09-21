@@ -1,7 +1,7 @@
 from .vertex import Vertex
 from .facet import Facet
 from .HalfEdge import Halfedge
-from .alg import is_point_in_circumcircle
+from .alg import is_point_in_circumcircle, cross_product
 import sys
 import math
 import random
@@ -53,7 +53,6 @@ class HalfedgeMesh:
                 count += 1
         return count
 
-
     def add_vertex(self, new_vertex):
         """
         Add a vertex to the HalfEdgeMesh, update faces and halfedges.
@@ -78,8 +77,6 @@ class HalfedgeMesh:
         else:
             self.create_three_new_faces(halfedge_a, halfedge_b, halfedge_c, new_vertex)
         
-
-
     def create_three_new_faces(self, halfedge_a, halfedge_b, halfedge_c, new_vertex):
         new_vertex.index = len(self.vertices)
         self.vertices.append(new_vertex)
@@ -174,8 +171,8 @@ class HalfedgeMesh:
         
         new_halfedge_c = Halfedge(None, None, None, halfedge_c.vertex, None, len(self.halfedges)+4)
         new_halfedge_ct = Halfedge(None, None, None, new_vertex.index, None, len(self.halfedges)+5)
-        new_halfedge_d = Halfedge(None, None, None, halfedge_f.vertex, None, len(self.halfedges)+4)
-        new_halfedge_dt = Halfedge(None, None, None, new_vertex.index, None, len(self.halfedges)+5)
+        new_halfedge_d = Halfedge(None, None, None, halfedge_f.vertex, None, len(self.halfedges)+6)
+        new_halfedge_dt = Halfedge(None, None, None, new_vertex.index, None, len(self.halfedges)+7)
 
         # Update the current halfedges to point to the new halfedges
         new_halfedge_a.next = new_halfedge_ct.index
@@ -271,14 +268,16 @@ class HalfedgeMesh:
         """
         # Step 1: Start with a random halfedge
         start_halfedge = random.choice(self.halfedges)
+        # print(start_halfedge.index, start_halfedge.opposite)
         current_halfedge = start_halfedge
-        i = 0
+        # i = 0
         while True:
             # print(i, current_halfedge.index)
             # print(i, current_halfedge.facet)
-            i += 1
+            # i += 1
             # Get the triangle (facet) associated with this halfedge
             facet = self.facets[current_halfedge.facet]
+            # print("facet ", facet.index)
             
             # Check if the point is inside the current facet
             if self.is_point_in_triangle(vertex, facet):
@@ -287,7 +286,7 @@ class HalfedgeMesh:
             # Check orientation with respect to the current halfedge
             orientation = self.point_orientation(vertex, current_halfedge)
             
-            if orientation == "on_segment":
+            if orientation == "on_segment" and self.on_half_edge(vertex, current_halfedge):
                 # Point is exactly on this halfedge, return the current halfedge
                 return current_halfedge
             elif orientation == "right":
@@ -296,9 +295,10 @@ class HalfedgeMesh:
             else:
                 # Check next halfedge and its next to the current facet
                 next_halfedge = self.halfedges[current_halfedge.next]
+                # print(next_halfedge.index, next_halfedge.opposite)
                 next_orientation = self.point_orientation(vertex, next_halfedge)
 
-                if next_orientation == "on_segment":
+                if next_orientation == "on_segment" and self.on_half_edge(vertex, next_halfedge):
                     return next_halfedge
                 elif next_orientation == "right":
                     current_halfedge = self.halfedges[next_halfedge.opposite]
@@ -396,8 +396,6 @@ class HalfedgeMesh:
         self.flip_edges_if_needed(prev_2)
         self.flip_edges_if_needed(next_2)
 
-    
-
     def is_point_in_triangle(self, vertex, facet):
         """
         Determine if a vertex lies within the given triangle (facet).
@@ -409,7 +407,6 @@ class HalfedgeMesh:
 
         return self.point_orientation(vertex, hf1) == "left" and self.point_orientation(vertex, hf2) == "left" and self.point_orientation(vertex, hf3) == "left" 
         
-
     def point_orientation(self, vertex, halfedge):
         """
         Determine the orientation of the point with respect to the given halfedge.
@@ -421,16 +418,21 @@ class HalfedgeMesh:
         p = vertex  # new point to check
 
         # Compute cross product of vectors p0p1 and p0p
-        cross_product = (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x)
-
-        if abs(cross_product) < 1e-6:
+        # cp = (p1.x - p0.x) * (p.y - p0.y) - (p1.y - p0.y) * (p.x - p0.x)
+        cp = cross_product(p0, p1, p)
+        # print("p0 ", p0.x, p0.y)
+        # print("p1 ", p1.x, p1.y)
+        # print("p ", p.x, p.y)
+        # print("cp ", cp)
+        if cp == 0:
             return "on_segment"  # Point is on the edge
-        elif cross_product > 0:
+        elif cp == 1:
             return "left"  # Point is to the left
         else:
             return "right"  # Point is to the right
 
     def get_halfedge(self, u, v):
+
         """Retrieve halfedge with starting vertex u and target vertex v
 
         u - starting vertex
@@ -440,47 +442,58 @@ class HalfedgeMesh:
         """
         return self.edges[(u, v)]
 
-    def update_vertices(self, vertices):
-        # update vertices
-        vlist = []
-        i = 0
-        for v in vertices:
-            vlist.append(Vertex(v[0], v[1], i))
-            i += 1
-        self.vertices = vlist
+    def on_half_edge(self, v, halfedge):
+        he_opposite = self.halfedges[halfedge.opposite]
+        v0 = self.vertices[halfedge.vertex]
+        v1 = self.vertices[he_opposite.vertex]
 
-        hlist = []
-        # update all the halfedges
+        if v0.x < v1.x:
+            inx_1 = v0.x < v.x < v1.x 
+        elif v0.x > v1.x:
+            inx_1 = v1.x < v.x < v0.x 
+        else:
+            inx_1 = v1.x == v.x
+        
+        if v0.y < v1.y:
+            iny_1 = v0.y < v.y < v1.y 
+        elif v0.y > v1.y:
+            iny_1 = v1.y < v.y < v0.y 
+        else:
+            iny_1 = v1.y == v.y
+        return inx_1 and iny_1
+
+    def remove_border_vertex(self, vertex_index):
         for he in self.halfedges:
-            vi = he.vertex.index
-            hlist.append(Halfedge(None, None, None, self.vertices[vi], None,
-                he.index))
+            if he.vertex == vertex_index:
+                he.deleted = True
+                if he.opposite != None:
+                    self.halfedges[he.opposite].deleted = True
+            if self.halfedges[he.prev].vertex == vertex_index:
+                self.halfedges[he.prev].deleted = True
+            # self.fix_border(he, vertex_index)
 
-        flist = []
-        # update neighboring halfedges
-        for f in self.facets:
-            hi = f.halfedge.index
-            flist.append(Facet(f.a, f.b, f.c, f.index,  hlist[hi]))
-        self.facets = flist
+    # def fix_border(self, halfedge, vertex_index):
+    #     if halfedge.vertex == vertex_index and halfedge.opposite != None:
+    #         he_opposite = self.halfedges[halfedge.opposite]
 
+    #         v1 = self.vertices[self.halfedges[he_opposite.prev].vertex]
+    #         v2 = self.vertices[he_opposite.vertex]
+    #         v3 = self.vertices[self.halfedges[halfedge.prev].vertex]
 
-        i = 0
-        for he in self.halfedges:
-            nextid = he.next.index
-            oppid = he.opposite.index
-            previd = he.prev.index
+    #         cp = cross_product(v1, v2, v3)
 
-            hlist[i].next = hlist[nextid]
-            hlist[i].opposite = hlist[oppid]
-            hlist[i].prev = hlist[previd]
+    #         if cp == 1:
+    #             new_face = Facet(v1.index, v2.index, v3.index, self.faces_count(), halfedge.next)
+    #             self.facets.append(new_face)
+    #             new_halfedge = Halfedge(he_opposite.prev, None, halfedge.next, self.halfedges[halfedge.prev].vertex, new_face.index, self.half_edges_count())
+    #             self.halfedges.append(new_halfedge)
+    #             self.halfedges[halfedge.next].next = new_halfedge.index
+    #             self.halfedges[halfedge.next].prev = self.halfedges[halfedge.opposite].prev
+    #             self.halfedges[halfedge.next].facet = new_face.index
+    #             self.halfedges[self.halfedges[halfedge.opposite].prev].next = halfedge.next
+    #             self.halfedges[self.halfedges[halfedge.opposite].prev].prev = new_halfedge.index
+    #             self.halfedges[self.halfedges[halfedge.opposite].prev].facet = new_face.index
 
-
-            fi = he.facet.index
-            hlist[i].facet = flist[fi]
-            i += 1
-
-        self.halfedges = hlist
-    
     def __eq__(self, other):
         return (isinstance(other, type(self)) and 
             (self.vertices, self.halfedges, self.facets) ==
@@ -490,154 +503,11 @@ class HalfedgeMesh:
         return (hash(str(self.vertices)) ^ hash(str(self.halfedges)) ^ hash(str(self.facets)) ^ 
             hash((str(self.vertices), str(self.halfedges), str(self.facets))))
 
-    def read_file(self, filename):
-        """Determine the type of file and use the appropriate parser.
+    
 
-        Returns a HalfedgeMesh
-        """
-        try:
-            with open(filename, 'r') as file:
+    
 
-                first_line = file.readline().strip().upper()
-
-                if first_line != "OFF":
-                    raise ValueError("Filetype: " + first_line + " not accepted")
-
-                # TODO: build OBJ, PLY parsers
-                parser_dispatcher = {"OFF": self.parse_off}
-                                      
-                return parser_dispatcher[first_line](file)
-
-        except IOError as e:
-            print("I/O error({0}): {1}".format(e.errno, e.strerror))
-            return
-        except ValueError as e:
-            print("Value error: {0}:".format(e))
-            return
-
-    def read_off_vertices(self, file_object, number_vertices):
-        """Read each line of the file_object and return a list of Vertex types.
-        The list will be as [V1, V2, ..., Vn] for n vertices
-
-        Return a list of vertices.
-        """
-        vertices = []
-
-        # Read all the vertices in
-        for index in xrange(number_vertices):
-            line = file_object.readline().split()
-
-            try:
-                # convert strings to floats
-                line = map(float, line)
-            except ValueError as e:
-                raise ValueError("vertices " + str(e))
-
-            vertices.append(Vertex(line[0], line[1], index))
-
-        return vertices
-
-    def parse_build_halfedge_off(self, file_object, number_facets, vertices):
-        """Link to the code:
-        http://stackoverflow.com/questions/15365471/initializing-half-edge-
-        data-structure-from-vertices
-
-        Pseudo code:
-        map< pair<unsigned int, unsigned int>, HalfEdge* > Edges;
-
-        for each face F
-        {
-            for each edge (u,v) of F
-            {
-                Edges[ pair(u,v) ] = new HalfEdge();
-                Edges[ pair(u,v) ]->face = F;
-            }
-            for each edge (u,v) of F
-            {
-                set Edges[ pair(u,v) ]->nextHalfEdge to next half-edge in F
-                if ( Edges.find( pair(v,u) ) != Edges.end() )
-                {
-                    Edges[ pair(u,v) ]->oppositeHalfEdge = Edges[ pair(v,u) ];
-                    Edges[ pair(v,u) ]->oppositeHalfEdge = Edges[ pair(u,v) ];
-            }
-        }
-
-        """
-        Edges = {}
-        facets = []
-        halfedge_count = 0
-        #TODO Check if vertex index out of bounds
-
-        # For each facet
-        for index in xrange(number_facets):
-            line = file_object.readline().split()
-
-            # convert strings to ints
-            line = map(int, line)
-
-            # TODO: make general to support non-triangular meshes
-            # Facets vertices are in counter-clockwise order
-            facet = Facet(line[1], line[2], line[3], index)
-            facets.append(facet)
-
-            # create pairing of vertices for example if the vertices are
-            # verts = [1,2,3] then zip(verts, verts[1:]) = [(1,2),(2,3)]
-            # note: we skip line[0] because it represents the number of vertices
-            # in the facet.
-            all_facet_edges = zip(line[1:], line[2:])
-            all_facet_edges.append((line[3], line[1]))
-
-            # For every halfedge around the facet
-            for i in xrange(3):
-                Edges[all_facet_edges[i]] = Halfedge()
-                Edges[all_facet_edges[i]].facet = facet
-                Edges[all_facet_edges[i]].vertex = vertices[
-                    all_facet_edges[i][1]]
-                vertices[all_facet_edges[i][1]].halfedge = Edges[all_facet_edges[i]]
-                halfedge_count +=1
-
-            facet.halfedge = Edges[all_facet_edges[0]]
-
-            for i in xrange(3):
-                Edges[all_facet_edges[i]].next = Edges[
-                    all_facet_edges[(i + 1) % 3]]
-                Edges[all_facet_edges[i]].prev = Edges[
-                    all_facet_edges[(i - 1) % 3]]
-
-                # reverse edge ordering of vertex, e.g. (1,2)->(2,1)
-                if all_facet_edges[i][2::-1] in Edges:
-                    Edges[all_facet_edges[i]].opposite = \
-                        Edges[all_facet_edges[i][2::-1]]
-
-                    Edges[all_facet_edges[i][2::-1]].opposite = \
-                        Edges[all_facet_edges[i]]
-
-        return facets, Edges
-
-    def parse_off(self, file_object):
-        """Parses OFF files
-
-        Returns a HalfedgeMesh
-        """
-        facets, halfedges, vertices = [], [], []
-
-        # TODO Make ability to discard # lines
-        vertices_faces_edges_counts = map(int, file_object.readline().split())
-
-        number_vertices = vertices_faces_edges_counts[0]
-        vertices = self.read_off_vertices(file_object, number_vertices)
-
-        number_facets = vertices_faces_edges_counts[1]
-        facets, Edges = self.parse_build_halfedge_off(file_object,
-                                                      number_facets, vertices)
-
-        i = 0
-        for key, value in Edges.iteritems():
-            value.index = i
-            halfedges.append(value)
-            i += 1
-
-        return vertices, halfedges, facets, Edges
+    
     
 
 

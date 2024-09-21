@@ -1,20 +1,32 @@
-from src2.HalfEdgeMesh import HalfedgeMesh
-from src2.vertex import Vertex
-from src2.HalfEdge import Halfedge
-from src2.facet import Facet
+from src.HalfEdgeMesh import HalfedgeMesh
+from src.vertex import Vertex
+from src.HalfEdge import Halfedge
+from src.facet import Facet
+import argparse
 import random
 import sys
 import pygame
 import time
+import math
 
+# Argumentos por consola
+parser = argparse.ArgumentParser(description="Generar una malla de Delaunay con valores personalizados.")
+parser.add_argument('--size', type=int, default=100000, help='Tamaño del contenedor (default: 100000)')
+parser.add_argument('--points', type=int, default=50, help='Número de puntos a insertar (default: 50)')
+parser.add_argument('--rectangular', action='store_true', help='Indica si la malla debe ser rectangular')
 
-SIZE = 100000
-POINTS = 50
+args = parser.parse_args()
+
+# Asignar los valores recibidos o usar los predeterminados
+SIZE = args.size
+POINTS = args.points
+rectangular = args.rectangular
+
 # Crear el objeto HalfedgeMesh
 mesh = HalfedgeMesh()
 random.seed(time.time())
 
-# Add vertices to the mesh
+# Agregar vertices
 mesh.vertices = [
     Vertex(SIZE, SIZE, 0),
     Vertex(-SIZE, SIZE, 1),
@@ -22,7 +34,7 @@ mesh.vertices = [
     Vertex(SIZE, -SIZE, 3)
 ]
 
-# Add a triangle face and halfedges
+# Agregar caras
 halfedge_0 = Halfedge(None, None, None, 0, None, 0)
 halfedge_1 = Halfedge(None, None, None, 1, None, 1)
 halfedge_2 = Halfedge(None, None, None, 1, None, 2)
@@ -60,26 +72,39 @@ facet2 = Facet(1, 2, 3, 1, 3)
 mesh.facets = [facet, facet2]
 
 print("Adding vertices...")
-# Añadir 100 puntos aleatorios a la malla
-for i in range(POINTS):
-    x = random.uniform(-SIZE+10, SIZE-10)
-    y = random.uniform(-SIZE+10, SIZE-10)
-    new_vertex = Vertex(x, y, 0)
-    
-    # Intentar agregar el vértice
-    # print("punto", i, x, y)
-    try:
-        mesh.add_vertex(new_vertex)
-    except ValueError as e:
-        print(f"Couldn't add vertex: {e}")
+if rectangular:
+    # Si la bandera 'rectangular' está activada, generar una cuadrícula
+    grid_size = int(math.sqrt(POINTS))  # Número de columnas y filas
+    x_step = 2 * (SIZE-500) / grid_size  # Espaciado horizontal
+    y_step = 2 * (SIZE-500) / grid_size  # Espaciado vertical
+    start_x = -(SIZE-500)
+    start_y = -(SIZE-500)
 
-for he in mesh.halfedges:
-    if he.vertex in [0, 1, 2, 3]:
-        he.deleted = True
-        if he.opposite != None:
-            mesh.halfedges[he.opposite].deleted = True
-    if mesh.halfedges[he.prev].vertex in [0, 1, 2, 3]:
-        mesh.halfedges[he.prev].deleted = True
+    for i in range(grid_size):
+        for j in range(grid_size):
+            x = start_x + i * x_step
+            y = start_y + j * y_step
+            new_vertex = Vertex(x, y, 0)
+            # print("punto (", x, ", ", y, ")",i, ", ", j)
+            mesh.add_vertex(new_vertex)
+else:
+# Añadir puntos aleatorios a la malla
+    for i in range(POINTS):
+        x = random.uniform(-SIZE+10, SIZE-10)
+        y = random.uniform(-SIZE+10, SIZE-10)
+        new_vertex = Vertex(x, y, 0)
+        
+        # Intentar agregar el vértice
+        try:
+            mesh.add_vertex(new_vertex)
+        except ValueError as e:
+            print(f"Couldn't add vertex: {e}")
+
+
+mesh.remove_border_vertex(0)
+mesh.remove_border_vertex(1)
+mesh.remove_border_vertex(2)
+mesh.remove_border_vertex(3)
 
 print("Generating Delaunay Mesh...")
 
@@ -106,26 +131,27 @@ def draw_mesh():
     screen.fill((0, 0, 0))  # Limpiar la pantalla
 
     # Dibujar los vértices
-    # for v in mesh.vertices:
-    #     transformed_x, transformed_y = transform_coordinates(v.x, v.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
-    #     pygame.draw.circle(screen, (255, 255, 255), (transformed_x, transformed_y), 3)
+    for v in mesh.vertices:
+        transformed_x, transformed_y = transform_coordinates(v.x, v.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
+        pygame.draw.circle(screen, (255, 255, 255), (transformed_x, transformed_y), 3)
 
     # Dibujar los halfedges (líneas)
     for he in mesh.halfedges:
+        start_vertex = mesh.vertices[he.vertex]
+        end_vertex = mesh.vertices[mesh.halfedges[he.next].vertex]
+        transformed_start = transform_coordinates(start_vertex.x, start_vertex.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
+        transformed_end = transform_coordinates(end_vertex.x, end_vertex.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
         if not he.deleted:
-            start_vertex = mesh.vertices[he.vertex]
-            end_vertex = mesh.vertices[mesh.halfedges[he.next].vertex]
-            transformed_start = transform_coordinates(start_vertex.x, start_vertex.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
-            transformed_end = transform_coordinates(end_vertex.x, end_vertex.y, offset_x, offset_y, zoom_factor, screen_width, screen_height)
             pygame.draw.line(screen, (0, 255, 0), transformed_start, transformed_end)
-
+        else:
+            pygame.draw.line(screen, (255, 255, 255), transformed_start, transformed_end)
     pygame.display.update()
 
 # Bucle principal para mover y hacer zoom con el ratón
 running = True
 while running:
-    draw_mesh()  # Dibujar la malla con el desplazamiento y el zoom actuales
-
+    draw_mesh()     # Dibujar la malla con el desplazamiento y el zoom actuales
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
