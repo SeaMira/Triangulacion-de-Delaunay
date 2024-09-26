@@ -1,3 +1,4 @@
 build
 delaunay
 src/pycache
+*.off

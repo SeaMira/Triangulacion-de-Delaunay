@@ -38,7 +38,7 @@ int main(int argc, char const* argv[]) {
     parse_arguments(argc, argv, SIZE, POINTS, rectangular, filename);
 
     // Inicializar la malla
-    HalfEdgeMesh mesh(SIZE);
+    HalfEdgeMesh mesh(SIZE, POINTS);
 
     // Configurar generador de números aleatorios
     std::random_device rd;
