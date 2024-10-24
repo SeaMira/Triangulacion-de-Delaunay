@@ -22,15 +22,11 @@ class HalfedgeMesh:
         self.vertices = vertices
         self.halfedges = halfedges
         self.facets = facets
-        self.filename = filename
         # dictionary of all the edges given indexes
         # TODO: Figure out if I need halfedges or if I should just use edges
         # Which is faster?
-        self.edges = None
 
-        if filename:
-            self.vertices, self.halfedges, self.facets, self.edges = \
-                    self.read_file(filename)
+        
             
     def faces_count(self):
         count = 0
@@ -59,9 +55,9 @@ class HalfedgeMesh:
         
         new_vertex - Vertex object to be added.
         """
-        for v in self.vertices:
-            if v.x == new_vertex.x and v.y == new_vertex.y:
-                return
+        # for v in self.vertices:
+        #     if v.x == new_vertex.x and v.y == new_vertex.y:
+        #         return
 
         # Step 1: Locate the triangle containing the new vertex
         halfedge_a = self.locate_triangle(new_vertex)
@@ -72,7 +68,7 @@ class HalfedgeMesh:
         halfedge_c = self.halfedges[halfedge_b.next]
 
         orientation = self.point_orientation(new_vertex, halfedge_a)
-        if orientation == "on_segment":
+        if orientation == 0:
             self.create_four_new_faces(halfedge_a, halfedge_b, halfedge_c, new_vertex)
         else:
             self.create_three_new_faces(halfedge_a, halfedge_b, halfedge_c, new_vertex)
@@ -276,20 +272,20 @@ class HalfedgeMesh:
             # print(i, current_halfedge.facet)
             # i += 1
             # Get the triangle (facet) associated with this halfedge
-            facet = self.facets[current_halfedge.facet]
+            # facet = self.facets[current_halfedge.facet]
             # print("facet ", facet.index)
             
             # Check if the point is inside the current facet
-            if self.is_point_in_triangle(vertex, facet):
-                return current_halfedge
+            # if self.is_point_in_triangle(vertex, facet):
+            #     return current_halfedge
 
             # Check orientation with respect to the current halfedge
             orientation = self.point_orientation(vertex, current_halfedge)
             
-            if orientation == "on_segment" and self.on_half_edge(vertex, current_halfedge):
+            if orientation == 0 and self.on_half_edge(vertex, current_halfedge):
                 # Point is exactly on this halfedge, return the current halfedge
                 return current_halfedge
-            elif orientation == "right":
+            elif orientation == -1:
                 # Move to the opposite halfedge and repeat
                 current_halfedge = self.halfedges[current_halfedge.opposite]
             else:
@@ -298,18 +294,20 @@ class HalfedgeMesh:
                 # print(next_halfedge.index, next_halfedge.opposite)
                 next_orientation = self.point_orientation(vertex, next_halfedge)
 
-                if next_orientation == "on_segment" and self.on_half_edge(vertex, next_halfedge):
+                if next_orientation == 0 and self.on_half_edge(vertex, next_halfedge):
                     return next_halfedge
-                elif next_orientation == "right":
+                elif next_orientation == -1:
                     current_halfedge = self.halfedges[next_halfedge.opposite]
                 else:
                     # If neither, move to the next of next halfedge
                     current_halfedge = self.halfedges[next_halfedge.next]
                     next_orientation = self.point_orientation(vertex, current_halfedge)
-                    if next_orientation == "on_segment":
+                    if next_orientation == 0:
                         return current_halfedge
-                    elif next_orientation == "right":
+                    elif next_orientation == -1:
                         current_halfedge = self.halfedges[current_halfedge.opposite]
+                    else: 
+                        return current_halfedge
                 
     def flip_edges_if_needed(self, halfedge):
         """
@@ -405,7 +403,7 @@ class HalfedgeMesh:
         hf2 = self.halfedges[hf1.next]
         hf3 = self.halfedges[hf2.next]
 
-        return self.point_orientation(vertex, hf1) == "left" and self.point_orientation(vertex, hf2) == "left" and self.point_orientation(vertex, hf3) == "left" 
+        return self.point_orientation(vertex, hf1) == 1 and self.point_orientation(vertex, hf2) == 1 and self.point_orientation(vertex, hf3) == 1 
         
     def point_orientation(self, vertex, halfedge):
         """
@@ -424,23 +422,8 @@ class HalfedgeMesh:
         # print("p1 ", p1.x, p1.y)
         # print("p ", p.x, p.y)
         # print("cp ", cp)
-        if cp == 0:
-            return "on_segment"  # Point is on the edge
-        elif cp == 1:
-            return "left"  # Point is to the left
-        else:
-            return "right"  # Point is to the right
+        return cp
 
-    def get_halfedge(self, u, v):
-
-        """Retrieve halfedge with starting vertex u and target vertex v
-
-        u - starting vertex
-        v - target vertex
-
-        Returns a halfedge
-        """
-        return self.edges[(u, v)]
 
     def on_half_edge(self, v, halfedge):
         he_opposite = self.halfedges[halfedge.opposite]

@@ -25,6 +25,7 @@ rectangular = args.rectangular
 # Crear el objeto HalfedgeMesh
 mesh = HalfedgeMesh()
 random.seed(time.time())
+start  = time.time()
 
 # Agregar vertices
 mesh.vertices = [
@@ -101,11 +102,13 @@ else:
             print(f"Couldn't add vertex: {e}")
 
 
+end  = time.time()
 mesh.remove_border_vertex(0)
 mesh.remove_border_vertex(1)
 mesh.remove_border_vertex(2)
 mesh.remove_border_vertex(3)
 
+print("Construction time:", end-start, " seconds")
 print("Generating Delaunay Mesh...")
 
 # Parámetros iniciales para movimiento y zoom
